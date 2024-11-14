@@ -1,24 +1,33 @@
 import React, { useState } from 'react';
-import './Form.css';
+import { loginUser } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const { saveToken } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    alert('Logged in successfully!');
+    try {
+      const response = await loginUser({ username, password });
+      saveToken(response.user.token);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error(error);
+      alert('Login failed');
+    }
   };
 
   return (
-    <div className="form-container">
+    <form onSubmit={handleLogin}>
       <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="submit">Login</button>
-      </form>
-    </div>
+      <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+      <button type="submit">Login</button>
+    </form>
   );
 };
 
