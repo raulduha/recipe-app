@@ -4,6 +4,7 @@ from schemas import UserCreate, UserResponse
 from services import create_user, authenticate_user
 from models import User  # Importing the User model from models.py
 from database import get_db  # Importing the database session dependency
+from sqlalchemy import text
 
 router = APIRouter()
 
@@ -16,7 +17,12 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     
     # Create new user
     new_user = create_user(db, user.username, user.password)
+
     return new_user
+
+
+
+
 
 @router.post("/login")
 def login(user: UserCreate, db: Session = Depends(get_db)):
