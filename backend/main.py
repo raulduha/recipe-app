@@ -10,7 +10,7 @@ import os
 app = FastAPI()
 
 # Configurar CORS
-origins = ["http://localhost:8000"]
+origins = ["http://localhost:8000", "https://recipe-app-ikm1.onrender.com"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
