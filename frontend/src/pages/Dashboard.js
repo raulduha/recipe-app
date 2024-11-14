@@ -1,120 +1,197 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { getRecipes, createRecipe } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const { token } = useAuth();
-  const [recipes, setRecipes] = useState([]);
-  const [newRecipe, setNewRecipe] = useState({
-    title: '',
-    description: '',
-    ingredients: []
-  });
-  const [newIngredient, setNewIngredient] = useState('');
 
-  // Fetch all recipes on initial load
-  const fetchRecipes = useCallback(async () => {
-    if (token) {
-      try {
-        const response = await getRecipes(token);
-        setRecipes(response.data);
-      } catch (error) {
-        console.error('Error fetching recipes:', error);
-      }
-    }
+  // Estados para la creación de recetas
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState([]);
+  const [newIngredient, setNewIngredient] = useState({ ingredient_id: null, unit_id: null, quantity_id: null });
+
+  // Estados para obtener datos de la API
+  const [allIngredients, setAllIngredients] = useState([]);
+  const [allUnits, setAllUnits] = useState([]);
+  const [allQuantities, setAllQuantities] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+
+  // Cargar todos los datos necesarios al iniciar
+  useEffect(() => {
+    fetchIngredients();
+    fetchUnits();
+    fetchQuantities();
+    fetchRecipes();
   }, [token]);
 
-  // Handle creating a new recipe
-  const handleCreateRecipe = async (e) => {
+  // Funciones para obtener datos desde la API
+  const fetchIngredients = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/recipes/ingredients', { headers: { Authorization: `Bearer ${token}` } });
+      setAllIngredients(response.data);
+    } catch (error) {
+      console.error('Error fetching ingredients:', error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/recipes/units', { headers: { Authorization: `Bearer ${token}` } });
+      setAllUnits(response.data);
+    } catch (error) {
+      console.error('Error fetching units:', error);
+    }
+  };
+
+  const fetchQuantities = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/recipes/quantities', { headers: { Authorization: `Bearer ${token}` } });
+      setAllQuantities(response.data);
+    } catch (error) {
+      console.error('Error fetching quantities:', error);
+    }
+  };
+
+  const fetchRecipes = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/recipes', { headers: { Authorization: `Bearer ${token}` } });
+      setRecipes(response.data.sort((a, b) => a.title.localeCompare(b.title)));
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+    }
+  };
+
+  // Manejar el envío del formulario para crear una receta
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!newRecipe.title || !newRecipe.description || newRecipe.ingredients.length === 0) {
-      alert('Please fill in all fields and add at least one ingredient');
+    if (!title || !description || ingredients.length === 0) {
+      alert('Please fill in all fields');
       return;
     }
 
+    const recipeData = {
+      title,
+      description,
+      owner_id: 1, // Cambiar según el usuario actual
+      ingredients
+    };
+
     try {
-      const recipeData = {
-        ...newRecipe,
-        ingredients: newRecipe.ingredients.map(ingredient => ingredient.trim()) // Ensure ingredients are clean
-      };
-
-      const response = await createRecipe(recipeData, token);
-      setRecipes((prevRecipes) => [...prevRecipes, response.data]);
-
-      // Reset form
-      setNewRecipe({ title: '', description: '', ingredients: [] });
-      setNewIngredient('');
+      await axios.post('http://localhost:8000/recipes', recipeData, { headers: { Authorization: `Bearer ${token}` } });
+      setTitle('');
+      setDescription('');
+      setIngredients([]);
+      fetchRecipes(); // Actualizar lista de recetas
     } catch (error) {
       console.error('Error creating recipe:', error);
     }
   };
 
-  // Handle adding a new ingredient
+  // Agregar un nuevo ingrediente
   const handleAddIngredient = () => {
-    if (newIngredient.trim() !== '') {
-      setNewRecipe((prevState) => ({
-        ...prevState,
-        ingredients: [...prevState.ingredients, newIngredient]
-      }));
-      setNewIngredient(''); // Clear the input field after adding
+    if (newIngredient.ingredient_id && newIngredient.unit_id && newIngredient.quantity_id) {
+      setIngredients([...ingredients, newIngredient]);
+      setNewIngredient({ ingredient_id: null, unit_id: null, quantity_id: null });
     }
   };
 
-  // Fetch recipes initially
-  useEffect(() => {
-    fetchRecipes();
-  }, [fetchRecipes]);
-
   return (
     <div className="dashboard">
-      <h2>Recipes Dashboard</h2>
-      <form className="recipe-form" onSubmit={handleCreateRecipe}>
+      <h2>Recipe Dashboard</h2>
+
+      {/* Formulario para crear una receta */}
+      <form onSubmit={handleSubmit} className="recipe-form">
         <input
           type="text"
-          placeholder="Title"
-          value={newRecipe.title}
-          onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })}
+          placeholder="Recipe Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
-        <input
-          type="text"
+        <textarea
           placeholder="Description"
-          value={newRecipe.description}
-          onChange={(e) => setNewRecipe({ ...newRecipe, description: e.target.value })}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
         />
-        
-        <div className="ingredients-input">
-          <input
-            type="text"
-            placeholder="Add ingredient"
-            value={newIngredient}
-            onChange={(e) => setNewIngredient(e.target.value)}
-          />
-          <button type="button" onClick={handleAddIngredient}>Add Ingredient</button>
+
+        <h4>Add Ingredients</h4>
+        <div className="button-group">
+          <h5>Select Ingredient:</h5>
+          {allIngredients.map(ing => (
+            <button
+              key={ing.id}
+              type="button"
+              className={newIngredient.ingredient_id === ing.id ? 'selected' : ''}
+              onClick={() => setNewIngredient({ ...newIngredient, ingredient_id: ing.id })}
+            >
+              {ing.name}
+            </button>
+          ))}
         </div>
 
-        <ul className="ingredients-list">
-          {newRecipe.ingredients.map((ingredient, index) => (
-            <li key={index}>{ingredient}</li>
+        <div className="button-group">
+          <h5>Select Unit:</h5>
+          {allUnits.map(unit => (
+            <button
+              key={unit.id}
+              type="button"
+              className={newIngredient.unit_id === unit.id ? 'selected' : ''}
+              onClick={() => setNewIngredient({ ...newIngredient, unit_id: unit.id })}
+            >
+              {unit.unit}
+            </button>
+          ))}
+        </div>
+
+        <div className="button-group">
+          <h5>Select Quantity:</h5>
+          {allQuantities.map(qty => (
+            <button
+              key={qty.id}
+              type="button"
+              className={newIngredient.quantity_id === qty.id ? 'selected' : ''}
+              onClick={() => setNewIngredient({ ...newIngredient, quantity_id: qty.id })}
+            >
+              {qty.quantity}
+            </button>
+          ))}
+        </div>
+
+        <button type="button" onClick={handleAddIngredient}>Add Ingredient</button>
+
+        <ul>
+          {ingredients.map((ing, index) => (
+            <li key={index}>
+              {allIngredients.find(i => i.id === ing.ingredient_id)?.name} - 
+              {allUnits.find(u => u.id === ing.unit_id)?.unit} - 
+              {allQuantities.find(q => q.id === ing.quantity_id)?.quantity}
+            </li>
           ))}
         </ul>
 
         <button type="submit">Add Recipe</button>
       </form>
 
+      {/* Mostrar recetas guardadas */}
       <div className="recipes-list">
-        {recipes.length > 0 ? (
-          recipes.map((recipe) => (
-            <div key={recipe.id} className="recipe-card">
-              <h3>{recipe.title}</h3>
-              <p>{recipe.description}</p>
-              <p><strong>Ingredients:</strong> {recipe.ingredients.join(', ')}</p>
-            </div>
-          ))
-        ) : (
-          <p>No recipes available</p>
-        )}
+        <h2>Saved Recipes</h2>
+        {recipes.map((recipe) => (
+          <div key={recipe.id} className="recipe-card">
+            <h3>{recipe.title}</h3>
+            <p>{recipe.description}</p>
+            <ul>
+              {recipe.ingredients.map((ing, index) => (
+                <li key={index}>
+                  {allIngredients.find(i => i.id === ing.ingredient_id)?.name} - 
+                  {allUnits.find(u => u.id === ing.unit_id)?.unit} - 
+                  {allQuantities.find(q => q.id === ing.quantity_id)?.quantity}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   );

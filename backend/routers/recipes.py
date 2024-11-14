@@ -1,38 +1,32 @@
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
-from schemas import RecipeCreate, RecipeResponse
-from models import Recipe, RecipeIngredient, Ingredient, UnitOfMeasurement, Quantity # Import the Recipe model from models.py
-from database import get_db  # Import the dependency to get a DB session
-
+from sqlalchemy.orm import Session, joinedload
+from schemas import IngredientDetail, RecipeCreate, RecipeResponse, IngredientResponse, UnitResponse, QuantityResponse
+from models import Recipe, RecipeIngredient, Ingredient, UnitOfMeasurement, Quantity
+from database import get_db
+from models import Recipe, RecipeIngredient, Ingredient
 router = APIRouter()
 
-@router.post("/recipes", response_model=RecipeResponse)
+@router.post("/", response_model=RecipeResponse)
 def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
-    # Create a new recipe in the database
+    # Crear la receta en la base de datos
     new_recipe = Recipe(
         title=recipe.title,
         description=recipe.description,
-        owner_id=recipe.owner_id  # You should later replace with the logged-in user's ID
+        owner_id=recipe.owner_id
     )
-    
     db.add(new_recipe)
     db.commit()
-    db.refresh(new_recipe)  # Get the ID of the new recipe
-    
-    # Now, process the ingredients and add them to the recipe_ingredients table
+    db.refresh(new_recipe)
+
+    # Añadir los ingredientes a la receta
     for ingredient_detail in recipe.ingredients:
-        # Retrieve the ingredient, unit, and quantity from the database
         ingredient = db.query(Ingredient).filter(Ingredient.id == ingredient_detail.ingredient_id).first()
         unit = db.query(UnitOfMeasurement).filter(UnitOfMeasurement.id == ingredient_detail.unit_id).first()
         quantity = db.query(Quantity).filter(Quantity.id == ingredient_detail.quantity_id).first()
-        
+
         if not ingredient or not unit or not quantity:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid ingredient, unit, or quantity ID"
-            )
-        
-        # Add the RecipeIngredient relationship to the database
+            raise HTTPException(status_code=400, detail="Invalid ingredient, unit, or quantity ID")
+
         recipe_ingredient = RecipeIngredient(
             recipe_id=new_recipe.id,
             ingredient_id=ingredient.id,
@@ -41,14 +35,66 @@ def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
         )
         db.add(recipe_ingredient)
 
-    # Commit the transaction to save the recipe and recipe_ingredients
     db.commit()
 
-    # Return the created recipe
-    return new_recipe
+    # Devolver la respuesta en el formato que espera Pydantic
+    return RecipeResponse(
+        id=new_recipe.id,
+        title=new_recipe.title,
+        description=new_recipe.description,
+        owner_id=new_recipe.owner_id,
+        ingredients=[
+            {
+                "ingredient_id": ing.ingredient_id,
+                "unit_id": ing.unit_id,
+                "quantity_id": ing.quantity_id,
+                "name": ing.ingredient.name,
+                "unit": ing.unit.unit,
+                "quantity": ing.quantity.quantity
+            }
+            for ing in new_recipe.ingredients
+        ]
+    )
 
-@router.get("/recipes", response_model=list[RecipeResponse])
+# Endpoint para obtener todas las recetas
+@router.get("/", response_model=list[RecipeResponse])
 def get_recipes(db: Session = Depends(get_db)):
-    # Retrieve all recipes from the database
-    recipes = db.query(Recipe).all()
-    return recipes
+    recipes = db.query(Recipe).options(
+        joinedload(Recipe.ingredients).joinedload(RecipeIngredient.ingredient),
+        joinedload(Recipe.ingredients).joinedload(RecipeIngredient.unit),
+        joinedload(Recipe.ingredients).joinedload(RecipeIngredient.quantity)
+    ).all()
+
+    recipes_data = []
+    for recipe in recipes:
+        ingredients = [
+            {
+                "ingredient_id": ing.ingredient_id,
+                "unit_id": ing.unit_id,
+                "quantity_id": ing.quantity_id,
+                "name": ing.ingredient.name,
+                "unit": ing.unit.unit,
+                "quantity": ing.quantity.quantity
+            }
+            for ing in recipe.ingredients
+        ]
+        recipes_data.append({
+            "id": recipe.id,
+            "title": recipe.title,
+            "description": recipe.description,
+            "owner_id": recipe.owner_id,
+            "ingredients": ingredients
+        })
+    
+    return recipes_data
+@router.get("/ingredients", response_model=list[IngredientResponse])
+def get_ingredients(db: Session = Depends(get_db)):
+    return db.query(Ingredient).all()
+
+@router.get("/units", response_model=list[UnitResponse])
+def get_units(db: Session = Depends(get_db)):
+    return db.query(UnitOfMeasurement).all()
+
+@router.get("/quantities", response_model=list[QuantityResponse])
+def get_quantities(db: Session = Depends(get_db)):
+    return db.query(Quantity).all()

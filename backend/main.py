@@ -1,21 +1,23 @@
 # main.py
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from routers import auth, recipes
-from database import get_db, Base, engine
+from database import Base, engine
 
 app = FastAPI()
 
-# CORS Configuration
+# Configurar CORS
+origins = ["http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Incluir routers
 app.include_router(auth.router, prefix="/auth")
 app.include_router(recipes.router, prefix="/recipes")
 
@@ -23,7 +25,7 @@ app.include_router(recipes.router, prefix="/recipes")
 def read_root():
     return {"message": "Welcome to the Recipe API"}
 
-# Add your DB model creation logic here, if necessary
+# Crear tablas al iniciar la aplicación
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)  # Create the tables if they don't exist
+    Base.metadata.create_all(bind=engine)
