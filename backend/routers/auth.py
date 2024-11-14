@@ -15,13 +15,14 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already taken")
     
-    # Create new user
+    # Crear un nuevo usuario
     new_user = create_user(db, user.username, user.password)
 
-    return new_user
-
-
-
+    # Asegúrate de retornar un objeto `UserResponse`
+    if new_user:
+        return UserResponse(id=new_user.id, username=new_user.username)
+    else:
+        raise HTTPException(status_code=500, detail="Error creating user")
 
 
 @router.post("/login")
