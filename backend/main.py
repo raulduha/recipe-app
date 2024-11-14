@@ -1,14 +1,16 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from routers import auth, recipes
 from database import Base, engine
+import os
 
 app = FastAPI()
 
 # Configurar CORS
-origins = ["http://localhost:3000"]
-
+origins = ["http://localhost:8000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -21,9 +23,13 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth")
 app.include_router(recipes.router, prefix="/recipes")
 
+# Servir archivos estáticos
+app.mount("/static", StaticFiles(directory="build/static"), name="static")
+
+# Ruta para servir la aplicación React
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to the Recipe API"}
+async def serve_frontend():
+    return FileResponse("build/index.html")
 
 # Crear tablas al iniciar la aplicación
 @app.on_event("startup")
