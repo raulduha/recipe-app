@@ -1,26 +1,152 @@
+/* Estilos generales para el formulario */
 .recipe-form {
-    margin: 20px auto;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-form input,
+.recipe-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.recipe-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.recipe-form h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #333;
+}
+
+/* Estilos para los grupos de botones */
+.button-group {
+  margin: 1.5em 0;
+}
+
+.button-group h5 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #666;
+}
+
+.button-group button {
+  margin: 0.5em;
+  padding: 10px 15px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Estilos para los botones seleccionados */
+.button-group button.selected {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.button-group button:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Estilos para la lista de ingredientes */
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+ul li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+/* Estilos para los botones de agregar y enviar */
+.recipe-form button[type="button"] {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.recipe-form button[type="button"]:hover {
+  background-color: #218838;
+}
+
+.recipe-form button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  margin-top: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.recipe-form button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+/* Media Queries para pantallas más pequeñas */
+@media (max-width: 768px) {
+  .button-group button {
+    width: 100%;
+    margin-bottom: 10px;
   }
-  
-  input, textarea, select {
-    margin-bottom: 15px;
-    padding: 10px;
-    font-size: 16px;
+
+  .recipe-form input,
+  .recipe-form textarea {
+    font-size: 14px;
   }
-  
-  button {
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  button:hover {
-    background-color: #45a049;
-  }
-  
+}
+.current-selection {
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+}
+
+.button-group {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.button-group button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background-color: #f7f7f7;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.button-group button.selected {
+  background-color: #007bff;
+  color: white;
+}
