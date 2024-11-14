@@ -7,3 +7,4 @@ services:
     envVars:
       - key: DATABASE_URL
         value: YOUR_DATABASE_URL
+    postdeployCommand: "python seed.py"
