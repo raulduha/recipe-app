@@ -22,6 +22,7 @@ export const getRecipes = async (token) => {
 
 // Crear una nueva receta
 export const createRecipe = async (data, token) => {
+  console.log("Sending recipe data:", data);  // Log the data to inspect
   return await axios.post(`${API_URL}/recipes/recipes`, data, {
     headers: { Authorization: `Bearer ${token}` }
   });

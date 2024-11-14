@@ -6,9 +6,14 @@ import './Dashboard.css';
 const Dashboard = () => {
   const { token } = useAuth();
   const [recipes, setRecipes] = useState([]);
-  const [newRecipe, setNewRecipe] = useState({ title: '', description: '', ingredients: '' });
+  const [newRecipe, setNewRecipe] = useState({
+    title: '',
+    description: '',
+    ingredients: []
+  });
+  const [newIngredient, setNewIngredient] = useState('');
 
-  // Función para cargar todas las recetas al inicio
+  // Fetch all recipes on initial load
   const fetchRecipes = useCallback(async () => {
     if (token) {
       try {
@@ -20,30 +25,44 @@ const Dashboard = () => {
     }
   }, [token]);
 
-  // Crear una receta y actualizar la lista en tiempo real
+  // Handle creating a new recipe
   const handleCreateRecipe = async (e) => {
     e.preventDefault();
 
-    if (!newRecipe.title || !newRecipe.description || !newRecipe.ingredients) {
-      alert('Please fill in all fields');
+    if (!newRecipe.title || !newRecipe.description || newRecipe.ingredients.length === 0) {
+      alert('Please fill in all fields and add at least one ingredient');
       return;
     }
 
     try {
-      // Crear la receta y obtener la respuesta
-      const response = await createRecipe(newRecipe, token);
-      
-      // Actualizar el estado con la nueva receta y mantener las existentes
+      const recipeData = {
+        ...newRecipe,
+        ingredients: newRecipe.ingredients.map(ingredient => ingredient.trim()) // Ensure ingredients are clean
+      };
+
+      const response = await createRecipe(recipeData, token);
       setRecipes((prevRecipes) => [...prevRecipes, response.data]);
 
-      // Limpiar el formulario
-      setNewRecipe({ title: '', description: '', ingredients: '' });
+      // Reset form
+      setNewRecipe({ title: '', description: '', ingredients: [] });
+      setNewIngredient('');
     } catch (error) {
       console.error('Error creating recipe:', error);
     }
   };
 
-  // Cargar las recetas al inicio
+  // Handle adding a new ingredient
+  const handleAddIngredient = () => {
+    if (newIngredient.trim() !== '') {
+      setNewRecipe((prevState) => ({
+        ...prevState,
+        ingredients: [...prevState.ingredients, newIngredient]
+      }));
+      setNewIngredient(''); // Clear the input field after adding
+    }
+  };
+
+  // Fetch recipes initially
   useEffect(() => {
     fetchRecipes();
   }, [fetchRecipes]);
@@ -52,24 +71,35 @@ const Dashboard = () => {
     <div className="dashboard">
       <h2>Recipes Dashboard</h2>
       <form className="recipe-form" onSubmit={handleCreateRecipe}>
-        <input 
-          type="text" 
-          placeholder="Title" 
+        <input
+          type="text"
+          placeholder="Title"
           value={newRecipe.title}
-          onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })} 
+          onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })}
         />
-        <input 
-          type="text" 
-          placeholder="Description" 
+        <input
+          type="text"
+          placeholder="Description"
           value={newRecipe.description}
-          onChange={(e) => setNewRecipe({ ...newRecipe, description: e.target.value })} 
+          onChange={(e) => setNewRecipe({ ...newRecipe, description: e.target.value })}
         />
-        <input 
-          type="text" 
-          placeholder="Ingredients" 
-          value={newRecipe.ingredients}
-          onChange={(e) => setNewRecipe({ ...newRecipe, ingredients: e.target.value })} 
-        />
+        
+        <div className="ingredients-input">
+          <input
+            type="text"
+            placeholder="Add ingredient"
+            value={newIngredient}
+            onChange={(e) => setNewIngredient(e.target.value)}
+          />
+          <button type="button" onClick={handleAddIngredient}>Add Ingredient</button>
+        </div>
+
+        <ul className="ingredients-list">
+          {newRecipe.ingredients.map((ingredient, index) => (
+            <li key={index}>{ingredient}</li>
+          ))}
+        </ul>
+
         <button type="submit">Add Recipe</button>
       </form>
 
@@ -79,7 +109,7 @@ const Dashboard = () => {
             <div key={recipe.id} className="recipe-card">
               <h3>{recipe.title}</h3>
               <p>{recipe.description}</p>
-              <p><strong>Ingredients:</strong> {recipe.ingredients}</p>
+              <p><strong>Ingredients:</strong> {recipe.ingredients.join(', ')}</p>
             </div>
           ))
         ) : (
