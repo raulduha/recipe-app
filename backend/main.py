@@ -18,18 +18,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Montar archivos estáticos
+static_path = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 # Incluir routers
 app.include_router(auth.router, prefix="/auth")
 app.include_router(recipes.router, prefix="/recipes")
 
-# Servir archivos estáticos
-app.mount("/static", StaticFiles(directory="build/static"), name="static")
-
-# Ruta para servir la aplicación React
 @app.get("/")
-async def serve_frontend():
-    return FileResponse("build/index.html")
+def read_root():
+    return {"message": "Welcome to the Recipe API"}
 
 # Crear tablas al iniciar la aplicación
 @app.on_event("startup")
