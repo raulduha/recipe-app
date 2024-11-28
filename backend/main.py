@@ -7,7 +7,7 @@ from database import Base, engine
 app = FastAPI()
 
 # Configurar CORS
-origins = ["http://localhost:3000", "http://recipe-app"]
+origins = ["http://localhost:3000", "http://recipe-app", "https://recipe-app-1-ydbi.onrender.com/"]
 
 app.add_middleware(
     CORSMiddleware,
